@@ -7,6 +7,8 @@ import { request } from "./api.js";
 const IMAGE_PATH_PREFIX =
   "https://fe-dev-matching-2021-03-serverlessdeploymentbuck-t3kpj3way537.s3.ap-northeast-2.amazonaws.com/public";
 
+const cache = {};
+
 export default function App(app) {
   this.state = {
     isRoot: false,
@@ -30,14 +32,25 @@ export default function App(app) {
           ...this.state,
           isLoading: true,
         });
-        const nextNodes = await request(node.id);
-        this.setState({
-          ...this.state,
-          isRoot: false,
-          depth: [...this.state.depth, node],
-          nodes: nextNodes,
-          isLoading: false,
-        });
+        if (cache[node.id]) {
+          this.setState({
+            ...this.state,
+            isRoot: false,
+            depth: [...this.state.depth, node],
+            nodes: cache[node.id],
+            isLoading: false,
+          });
+        } else {
+          const nextNodes = await request(node.id);
+          this.setState({
+            ...this.state,
+            isRoot: false,
+            depth: [...this.state.depth, node],
+            nodes: nextNodes,
+            isLoading: false,
+          });
+          cache[node.id] = nextNodes;
+        }
       } else if (node.type === "FILE") {
       }
     },
@@ -50,20 +63,24 @@ export default function App(app) {
             ? null
             : nextState.depth[nextState.depth.length - 1].id;
         if (prevNodeId === null) {
-          this.setState({
-            ...this.state,
-            isLoading: true,
-          });
-          const rootNodes = await request();
+          // this.setState({
+          //   ...this.state,
+          //   isLoading: true,
+          // });
+          //const rootNodes = await request();
           this.setState({
             ...nextState,
             isRoot: true,
-            nodes: rootNodes,
+            nodes: cache.rootNodes,
             isLoading: false,
           });
         } else {
-          const prevNodes = await request(prevNodeId);
-          this.setState({ ...nextState, isRoot: false, nodes: prevNodes });
+          //const prevNodes = await request(prevNodeId);
+          this.setState({
+            ...nextState,
+            isRoot: false,
+            nodes: cache[prevNodeId],
+          });
         }
       } catch (e) {
         alert(e);
@@ -95,6 +112,7 @@ export default function App(app) {
         nodes: rootNodes,
         isLoading: false,
       });
+      cache.rootNodes = rootNodes;
     } catch (e) {
       console.log(e);
     } finally {
