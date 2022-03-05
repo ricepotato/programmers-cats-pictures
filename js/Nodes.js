@@ -27,21 +27,23 @@ export default function Nodes({ app, initialState, onClick, onBackClick }) {
         ? nodesTemplate
         : `<div class="Node"><img src="./assets/prev.png"></div>${nodesTemplate}`;
     }
-    //const items = this.state.nodes.map((node) => `<li>${node.name}</li>`);
 
-    this.target.querySelectorAll(".Node").forEach((node) => {
-      node.addEventListener("click", (e) => {
-        const { nodeId } = e.target.dataset;
+    this.target.addEventListener("click", (e) => {
+      const node = e.target.closest(".Node");
+      if (node) {
+        const { nodeId } = node.dataset;
         if (!nodeId) {
           this.onBackClick();
+          return;
         }
+
         const selectedNode = this.state.nodes.find(
           (node) => node.id === nodeId
         );
         if (selectedNode) {
           this.onClick(selectedNode);
         }
-      });
+      }
     });
   };
 
