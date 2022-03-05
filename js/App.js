@@ -4,9 +4,6 @@ import Nodes from "./Nodes.js";
 import Loading from "./Loading.js";
 import { request } from "./api.js";
 
-const IMAGE_PATH_PREFIX =
-  "https://fe-dev-matching-2021-03-serverlessdeploymentbuck-t3kpj3way537.s3.ap-northeast-2.amazonaws.com/public";
-
 const cache = {};
 
 export default function App(app) {
@@ -21,6 +18,9 @@ export default function App(app) {
   const imageView = new ImageView({
     app,
     initialState: this.state.selectedFilePath,
+    onClick: () => {
+      this.setState({ ...this.state, selectedFilePath: null });
+    },
   });
   const breadcrumb = new Breadcrumb({
     app,
@@ -73,6 +73,10 @@ export default function App(app) {
           cache[node.id] = nextNodes;
         }
       } else if (node.type === "FILE") {
+        this.setState({
+          ...this.state,
+          selectedFilePath: node.filePath,
+        });
       }
     },
     onBackClick: async () => {
@@ -84,11 +88,6 @@ export default function App(app) {
             ? null
             : nextState.depth[nextState.depth.length - 1].id;
         if (prevNodeId === null) {
-          // this.setState({
-          //   ...this.state,
-          //   isLoading: true,
-          // });
-          //const rootNodes = await request();
           this.setState({
             ...nextState,
             isRoot: true,
@@ -96,7 +95,6 @@ export default function App(app) {
             isLoading: false,
           });
         } else {
-          //const prevNodes = await request(prevNodeId);
           this.setState({
             ...nextState,
             isRoot: false,
