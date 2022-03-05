@@ -1,6 +1,7 @@
 import ImageView from "./ImageView.js";
 import Breadcrumb from "./Breadcrumb.js";
 import Nodes from "./Nodes.js";
+import Loading from "./Loading.js";
 import { request } from "./api.js";
 
 const IMAGE_PATH_PREFIX =
@@ -12,7 +13,9 @@ export default function App(app) {
     nodes: [],
     depth: [],
     selectedFilePath: null,
+    isLoading: false,
   };
+  const loading = new Loading({ app, initialState: this.state.isLoading });
   const imageView = new ImageView({
     app,
     initialState: this.state.selectedFilePath,
@@ -23,12 +26,17 @@ export default function App(app) {
     initialState: { isRoot: this.state.isRoot, nodes: this.state.nodes },
     onClick: async (node) => {
       if (node.type === "DIRECTORY") {
+        this.setState({
+          ...this.state,
+          isLoading: true,
+        });
         const nextNodes = await request(node.id);
         this.setState({
           ...this.state,
           isRoot: false,
           depth: [...this.state.depth, node],
           nodes: nextNodes,
+          isLoading: false,
         });
       } else if (node.type === "FILE") {
       }
@@ -42,11 +50,16 @@ export default function App(app) {
             ? null
             : nextState.depth[nextState.depth.length - 1].id;
         if (prevNodeId === null) {
+          this.setState({
+            ...this.state,
+            isLoading: true,
+          });
           const rootNodes = await request();
           this.setState({
             ...nextState,
             isRoot: true,
             nodes: rootNodes,
+            isLoading: false,
           });
         } else {
           const prevNodes = await request(prevNodeId);
@@ -66,18 +79,29 @@ export default function App(app) {
       nodes: this.state.nodes,
     });
     imageView.setState(this.state.selectedFilePath);
+    loading.setState(this.state.isLoading);
   };
 
   const init = async () => {
     try {
+      this.setState({
+        ...this.state,
+        isLoading: true,
+      });
       const rootNodes = await request();
       this.setState({
         ...this.state,
         isRoot: true,
         nodes: rootNodes,
+        isLoading: false,
       });
     } catch (e) {
       console.log(e);
+    } finally {
+      this.setState({
+        ...this.state,
+        isLoading: false,
+      });
     }
   };
 
